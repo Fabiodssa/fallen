@@ -1,1 +1,3 @@
-fabio|a@b|admin
+fabio|a@b|Fallen@2024#Secure|admin
+admin|admin@sistema.com|123|admin
+0|0|0|admin
