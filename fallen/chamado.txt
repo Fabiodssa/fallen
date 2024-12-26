@@ -1,0 +1,3 @@
+1|ECG nao funciona|alta|25/12/2024 23:58:25|ECG|fafa
+2|ruim|alta|26/12/2024 00:01:06|ECG|fafa
+3|pan|alta|26/12/2024 00:23:56|ventilador|fafa

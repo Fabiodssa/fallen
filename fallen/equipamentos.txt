@@ -1,0 +1,3 @@
+3213|ECG|3|Equipamento na UTI|ECG|UTI
+2341|ventilador|2|bom|ventilador pulmonar|UTI
+4567|faca|5|faca pra barriga|faca de barriga|CC

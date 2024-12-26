@@ -1,0 +1,4 @@
+admin|admin@sistema.com|admin123|admin
+fafa|fafa@gmail.com|123|admin
+bru|bru@gmail.com|123|tecnico
+kaka|kaka@gmail.com|123|inspector
