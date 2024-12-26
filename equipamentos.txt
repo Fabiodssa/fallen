@@ -1,1 +1,4 @@
-6789|pc|100|tela|n|ba
+6789|pc|80|tela|n|ba
+123|pc|1|defeitro|g|bahia
+562|da|1|das|dsad|dsas
+123|mai|10|dsadas|dsadas|ba

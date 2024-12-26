@@ -1,3 +1,5 @@
-fabio|a@b|Fallen@2024#Secure|admin
 admin|admin@sistema.com|123|admin
-0|0|0|admin
+fabio|a@b|123|admin
+novo|novo@|123|inspector
+Kleb|klb@|123456|tecnico
+maria|masr|sa|admin

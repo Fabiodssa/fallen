@@ -1,7 +1,15 @@
 from datetime import datetime
 import os
-import hashlib
 
+"""
+Pontos de melhora: quando for um usuario de admin
+    - na em editar usuarios deve listar e mostrar uma lista numerada com todos os
+    usuarios, então o usuario deve escolher um usuario da lista para fazer a mudança,
+    além disso para a cada edição deve ter uma mensagem de confirmação, se for sim ira fazer a mudança,
+    se for não, não ira fazer
+    - em editar e excluir usuarios deve poder fazer a pesquisa por nome ou por email, alem disso,
+    em excluir deve ter uma mensagem de confirmação antes de excluir o usuario
+"""
 
 def get_file_path(arquivo):
     """Retorna o caminho completo do arquivo na pasta fallen"""
@@ -12,6 +20,21 @@ def get_file_path(arquivo):
         os.makedirs(pasta_fallen)
         
     return os.path.join(pasta_fallen, arquivo)
+
+def get_next_id(arquivo):
+    """Retorna o próximo ID disponível para o arquivo"""
+    arquivo_path = get_file_path(arquivo)
+    try:
+        if not os.path.exists(arquivo_path):
+            return 1
+            
+        with open(arquivo_path, 'r', encoding='utf-8') as f:
+            linhas = f.readlines()
+            if not linhas:
+                return 1
+            return len(linhas) + 1
+    except:
+        return 1
 
 def cadastrar_equipamento():
     """Função para abrir tela de cadastro de equipamento"""
@@ -107,35 +130,13 @@ def Chamado(descricao: str, prioridade: str, equipamento: str, atribuir_para: st
             print("Usuário não existente. O chamado não pode ser registrado.")
             return False
             
-        # Se o usuário existe, verifica o equipamento
+        # Se o usuário existe, registra o chamado
         data_abertura = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         
-        arquivo_path = get_file_path('cadastro_equipamentos.txt')
-        equipamento_encontrado = False
+        # Gera o próximo ID disponível
+        id_chamado = get_next_id('chamado.txt')
         
-        if os.path.exists(arquivo_path):
-            with open(arquivo_path, 'r', encoding='utf-8') as arquivo:
-                for linha in arquivo:
-                    if equipamento in linha:
-                        equipamento_encontrado = True
-                        break
-        
-        if not equipamento_encontrado:
-            print(f"Equipamento {equipamento} não encontrado.")
-            opcao = input("Deseja cadastrar? (S/N): ").upper()
-            
-            if opcao == 'S':
-                if cadastrar_equipamento():
-                    print("Continuando com o registro do chamado...")
-                else:
-                    print("Não foi possível cadastrar o equipamento.")
-                    return False
-            else:
-                print("Voltando para o início...")
-                return False
-        
-        # Se chegou aqui, tanto usuário quanto equipamento são válidos
-        dados = f"{descricao}|{prioridade}|{data_abertura}|{equipamento}|{atribuir_para}"
+        dados = f"{id_chamado}|{descricao}|{prioridade}|{data_abertura}|{equipamento}|{atribuir_para}"
         return salvar_registro('chamado.txt', dados)
         
     except Exception as e:
@@ -349,7 +350,8 @@ def ver_perfil(usuario):
                     print("\n=== Meu Perfil ===")
                     print(f"Nome: {dados[0]}")
                     print(f"Email: {dados[1]}")
-                    print(f"Tipo: {dados[2]}")
+                    print(f"Senha: {dados[2]}")
+                    print(f'Tipo: {dados[3]}')
                     break
     else:
         print("Perfil não encontrado.")
@@ -430,18 +432,41 @@ def gerenciar_usuarios():
             if Gestao_Usuario(nome, email, senha, tipo):
                 print("Usuário cadastrado com sucesso!")
         elif opcao == "3":
-            nome = input("Nome do usuário a ser editado: ")
-            if verificar_usuario(nome):
-                email = input("Novo email: ")
-                senha = input("Nova senha: ")
-                tipo = input("Novo tipo (admin/inspector/tecnico): ")
-                editar_usuario(nome, email, senha, tipo)
-            else:
-                print("Usuário não encontrado!")
+            # Lista os usuários disponíveis
+            usuarios = listar_usuarios_numerados()
+            if not usuarios:
+                print("Nenhum usuário cadastrado.")
+                continue
+                
+            try:
+                escolha = int(input("\nDigite o número do usuário que deseja editar: ")) - 1
+                if escolha < 0 or escolha >= len(usuarios):
+                    print("Número inválido!")
+                    continue
+                
+                usuario = usuarios[escolha]
+                if editar_usuario(usuario[0], usuario[1], usuario[2], usuario[3]):
+                    print("Usuário editado com sucesso!")
+            except ValueError:
+                print("Por favor, digite um número válido!")
+                
         elif opcao == "4":
-            nome = input("Nome do usuário a ser excluído: ")
-            if excluir_usuario(nome):
-                print("Usuário excluído com sucesso!")
+            # Lista os usuários disponíveis
+            usuarios = listar_usuarios_numerados()
+            if not usuarios:
+                print("Nenhum usuário cadastrado.")
+                continue
+                
+            try:
+                escolha = input("\nDigite o número do usuário que deseja excluir: ")
+                if not escolha.isdigit() or int(escolha) < 1 or int(escolha) > len(usuarios):
+                    print("Número inválido!")
+                    continue
+                
+                if excluir_usuario(escolha):
+                    print("Usuário excluído com sucesso!")
+            except ValueError:
+                print("Por favor, digite um número válido!")
 
 def gerenciar_equipamentos():
     """Função para gerenciar equipamentos"""
@@ -462,15 +487,40 @@ def gerenciar_equipamentos():
         elif opcao == "2":
             cadastrar_equipamento()
         elif opcao == "3":
-            nome = input("Nome do equipamento a ser editado: ")
-            if verificar_equipamento(nome):
-                editar_equipamento(nome)
-            else:
-                print("Equipamento não encontrado!")
+            # Lista os equipamentos disponíveis
+            equipamentos = listar_equipamentos_numerados()
+            if not equipamentos:
+                print("Nenhum equipamento cadastrado.")
+                continue
+                
+            try:
+                escolha = input("\nDigite o número do equipamento que deseja editar: ")
+                if not escolha.isdigit() or int(escolha) < 1 or int(escolha) > len(equipamentos):
+                    print("Número inválido!")
+                    continue
+                
+                if editar_equipamento(escolha):  # Passa o número escolhido diretamente
+                    print("Equipamento editado com sucesso!")
+            except ValueError:
+                print("Por favor, digite um número válido!")
+                
         elif opcao == "4":
-            nome = input("Nome do equipamento a ser excluído: ")
-            if excluir_equipamento(nome):
-                print("Equipamento excluído com sucesso!")
+            # Lista os equipamentos disponíveis
+            equipamentos = listar_equipamentos_numerados()
+            if not equipamentos:
+                print("Nenhum equipamento cadastrado.")
+                continue
+                
+            try:
+                escolha = input("\nDigite o número do equipamento que deseja excluir: ")
+                if not escolha.isdigit() or int(escolha) < 1 or int(escolha) > len(equipamentos):
+                    print("Número inválido!")
+                    continue
+                
+                if excluir_equipamento(escolha):
+                    print("Equipamento excluído com sucesso!")
+            except ValueError:
+                print("Por favor, digite um número válido!")
 
 def gerenciar_chamados():
     """Função para gerenciar chamados"""
@@ -490,9 +540,63 @@ def gerenciar_chamados():
             ver_todos_chamados()
         elif opcao == "2":
             descricao = input("Descrição do chamado: ")
-            prioridade = input("Prioridade (baixa/media/alta): ")
-            equipamento = input("Equipamento: ")
-            atribuir_para = input("Atribuir para: ")
+            
+            # Validação da prioridade
+            while True:
+                prioridade = input("Prioridade (baixa/media/alta): ").lower()
+                if prioridade in ['baixa', 'media', 'alta']:
+                    break
+                print("Prioridade inválida! Use: baixa, media ou alta")
+            
+            # Validação do equipamento
+            equipamento = None
+            while not equipamento:
+                nome_equip = input("Equipamento: ")
+                arquivo_path = get_file_path('equipamentos.txt')
+                
+                if os.path.exists(arquivo_path):
+                    with open(arquivo_path, 'r', encoding='utf-8') as arquivo:
+                        for linha in arquivo:
+                            dados = linha.strip().split('|')
+                            if dados[1].lower() == nome_equip.lower():
+                                equipamento = dados[1]  # Usa o nome exato do equipamento
+                                break
+                
+                if not equipamento:
+                    print(f"Equipamento '{nome_equip}' não encontrado.")
+                    opcao = input("Deseja cadastrar? (S/N): ").upper()
+                    
+                    if opcao == 'S':
+                        serie = input("Número de série: ")
+                        while True:
+                            try:
+                                quantidade = int(input("Quantidade: "))
+                                break
+                            except ValueError:
+                                print("Por favor, digite um número válido para quantidade.")
+                        descricao_equip = input("Descrição: ")
+                        foto = input("Nome do arquivo de foto: ")
+                        local = input("Local: ")
+                        
+                        if Equipamento(serie, nome_equip, quantidade, descricao_equip, foto, local):
+                            print("Equipamento cadastrado com sucesso!")
+                            equipamento = nome_equip
+                        else:
+                            print("Erro ao cadastrar equipamento.")
+                    else:
+                        print("Operação cancelada.")
+                        return
+            
+            # Validação do usuário
+            while True:
+                atribuir_para = input("Atribuir para: ")
+                if verificar_usuario(atribuir_para):
+                    break
+                print("\nUsuário não encontrado!")
+                print("Usuários disponíveis:")
+                listar_nomes_usuarios()
+                print()
+            
             if Chamado(descricao, prioridade, equipamento, atribuir_para):
                 print("Chamado registrado com sucesso!")
         elif opcao == "3":
@@ -534,16 +638,49 @@ def ver_usuarios():
     if os.path.exists(arquivo_path):
         with open(arquivo_path, 'r', encoding='utf-8') as f:
             print("\n=== Usuários Cadastrados ===")
-            for linha in f:
+            for i, linha in enumerate(f, 1):
                 dados = linha.strip().split('|')
-                print(f"Nome: {dados[0]}")
-                print(f"Email: {dados[1]}")
-                print(f"Tipo: {dados[2]}")
+                print(f"{i}. Nome: {dados[0]}")
+                print(f"   Email: {dados[1]}")
+                print(f"   Tipo: {dados[3]}")
                 print("-" * 30)
     else:
         print("Nenhum usuário cadastrado.")
 
 # Funções auxiliares
+def listar_usuarios_numerados():
+    """Lista todos os usuários com numeração"""
+    arquivo_path = get_file_path('usuarios.txt')
+    usuarios = []
+    
+    if os.path.exists(arquivo_path):
+        with open(arquivo_path, 'r', encoding='utf-8') as f:
+            print("\n=== Usuários Cadastrados ===")
+            for i, linha in enumerate(f, 1):
+                dados = linha.strip().split('|')
+                print(f"{i}. Nome: {dados[0]}")
+                print(f"   Email: {dados[1]}")
+                print(f"   Tipo: {dados[3]}")
+                print("-" * 30)
+                usuarios.append(dados)
+    else:
+        print("Nenhum usuário cadastrado.")
+    return usuarios
+
+def buscar_usuario(termo_busca):
+    """Busca usuário por nome ou email"""
+    arquivo_path = get_file_path('usuarios.txt')
+    usuarios = []
+    
+    if os.path.exists(arquivo_path):
+        with open(arquivo_path, 'r', encoding='utf-8') as f:
+            for linha in f:
+                dados = linha.strip().split('|')
+                if termo_busca.lower() in dados[0].lower() or termo_busca.lower() in dados[1].lower():
+                    usuarios.append(dados)
+    
+    return usuarios
+
 def editar_usuario(nome, email, senha, tipo):
     """Função para editar usuário"""
     arquivo_path = get_file_path('usuarios.txt')
@@ -552,14 +689,49 @@ def editar_usuario(nome, email, senha, tipo):
     try:
         with open(arquivo_path, 'r', encoding='utf-8') as f_in, \
              open(temp_path, 'w', encoding='utf-8') as f_out:
+            
+            encontrado = False
             for linha in f_in:
-                if nome in linha:
-                    f_out.write(f"{nome}|{email}|{senha}|{tipo}\n")
+                dados = linha.strip().split('|')
+                if dados[0] == nome:  # Encontrou o usuário para editar
+                    encontrado = True
+                    # Mostra dados atuais
+                    print("\nDados atuais:")
+                    print(f"Nome: {dados[0]}")
+                    print(f"Email: {dados[1]}")
+                    print(f"Tipo: {dados[3]}")
+                    
+                    # Solicita novos dados (ou mantém os atuais)
+                    novo_nome = input("\nNovo nome (Enter para manter atual): ") or dados[0]
+                    novo_email = input("Novo email (Enter para manter atual): ") or dados[1]
+                    nova_senha = input("Nova senha (Enter para manter atual): ") or dados[2]
+                    novo_tipo = input("Novo tipo (admin/inspector/tecnico) (Enter para manter atual): ") or dados[3]
+                    
+                    # Confirma alterações
+                    print("\nConfirma as alterações?")
+                    print(f"Nome: {novo_nome}")
+                    print(f"Email: {novo_email}")
+                    print(f"Tipo: {novo_tipo}")
+                    
+                    confirmacao = input("\nConfirmar alterações? (S/N): ").upper()
+                    if confirmacao == 'S':
+                        # Escreve a linha atualizada
+                        f_out.write(f"{novo_nome}|{novo_email}|{nova_senha}|{novo_tipo}\n")
+                        print("Alterações salvas com sucesso!")
+                    else:
+                        # Mantém os dados originais
+                        f_out.write(linha)
+                        print("Operação cancelada.")
                 else:
+                    # Mantém as outras linhas inalteradas
                     f_out.write(linha)
+            
+            if not encontrado:
+                print("Usuário não encontrado!")
+                return False
         
+        # Substitui o arquivo original pelo temporário
         os.replace(temp_path, arquivo_path)
-        print("Usuário editado com sucesso!")
         return True
         
     except Exception as e:
@@ -572,53 +744,58 @@ def excluir_usuario(nome):
     temp_path = get_file_path('temp.txt')
     
     try:
+        # Lista todos os usuários numerados
+        usuarios = listar_usuarios_numerados()
+        
+        if not usuarios:
+            print("Nenhum usuário encontrado.")
+            return False
+        
+        # Confirma exclusão
+        print(f"\nTem certeza que deseja excluir o usuário?")
+        print(f"Nome: {usuarios[int(nome)-1][0]}")
+        print(f"Email: {usuarios[int(nome)-1][1]}")
+        print(f"Tipo: {usuarios[int(nome)-1][3]}")
+        
+        confirmacao = input("\nConfirmar exclusão? (S/N): ").upper()
+        if confirmacao != 'S':
+            print("Operação cancelada.")
+            return False
+        
+        # Exclui o usuário
         with open(arquivo_path, 'r', encoding='utf-8') as f_in, \
              open(temp_path, 'w', encoding='utf-8') as f_out:
-            for linha in f_in:
-                if nome not in linha:
+            for i, linha in enumerate(f_in):
+                if i != int(nome)-1:  # Se não for o usuário selecionado, mantém no arquivo
                     f_out.write(linha)
         
         os.replace(temp_path, arquivo_path)
+        print("Usuário excluído com sucesso!")
         return True
         
     except Exception as e:
         print(f"Erro ao excluir usuário: {e}")
         return False
 
-def editar_equipamento(nome):
-    """Função para editar equipamento"""
+def listar_equipamentos_numerados():
+    """Lista todos os equipamentos com numeração"""
     arquivo_path = get_file_path('equipamentos.txt')
-    temp_path = get_file_path('temp.txt')
+    equipamentos = []
     
-    try:
-        # Coleta os novos dados
-        serie = input("Novo número de série: ")
-        while True:
-            try:
-                quantidade = int(input("Nova quantidade: "))
-                break
-            except ValueError:
-                print("Por favor, digite um número válido para quantidade.")
-        descricao = input("Nova descrição: ")
-        foto = input("Novo nome do arquivo de foto: ")
-        local = input("Novo local: ")
-        
-        # Atualiza o arquivo
-        with open(arquivo_path, 'r', encoding='utf-8') as f_in, \
-             open(temp_path, 'w', encoding='utf-8') as f_out:
-            for linha in f_in:
-                if nome in linha:
-                    f_out.write(f"{serie}|{nome}|{quantidade}|{descricao}|{foto}|{local}\n")
-                else:
-                    f_out.write(linha)
-        
-        os.replace(temp_path, arquivo_path)
-        print("Equipamento editado com sucesso!")
-        return True
-        
-    except Exception as e:
-        print(f"Erro ao editar equipamento: {e}")
-        return False
+    if os.path.exists(arquivo_path):
+        with open(arquivo_path, 'r', encoding='utf-8') as f:
+            print("\n=== Equipamentos Cadastrados ===")
+            for i, linha in enumerate(f, 1):
+                dados = linha.strip().split('|')
+                print(f"{i}. Nome: {dados[1]}")
+                print(f"   Série: {dados[0]}")
+                print(f"   Quantidade: {dados[2]}")
+                print(f"   Local: {dados[5]}")
+                print("-" * 30)
+                equipamentos.append(dados)
+    else:
+        print("Nenhum equipamento cadastrado.")
+    return equipamentos
 
 def excluir_equipamento(nome):
     """Função para excluir equipamento"""
@@ -626,20 +803,30 @@ def excluir_equipamento(nome):
     temp_path = get_file_path('temp.txt')
     
     try:
-        # Verifica se há chamados abertos para este equipamento
-        chamados_path = get_file_path('chamado.txt')
-        if os.path.exists(chamados_path):
-            with open(chamados_path, 'r', encoding='utf-8') as f:
-                for linha in f:
-                    if nome in linha and 'aberta' in linha.lower():
-                        print("Não é possível excluir equipamento com chamados abertos!")
-                        return False
+        # Lista todos os equipamentos numerados
+        equipamentos = listar_equipamentos_numerados()
+        
+        if not equipamentos:
+            print("Nenhum equipamento encontrado.")
+            return False
+        
+        # Confirma exclusão
+        print(f"\nTem certeza que deseja excluir o equipamento?")
+        print(f"Nome: {equipamentos[int(nome)-1][1]}")
+        print(f"Série: {equipamentos[int(nome)-1][0]}")
+        print(f"Quantidade: {equipamentos[int(nome)-1][2]}")
+        print(f"Local: {equipamentos[int(nome)-1][5]}")
+        
+        confirmacao = input("\nConfirmar exclusão? (S/N): ").upper()
+        if confirmacao != 'S':
+            print("Operação cancelada.")
+            return False
         
         # Exclui o equipamento
         with open(arquivo_path, 'r', encoding='utf-8') as f_in, \
              open(temp_path, 'w', encoding='utf-8') as f_out:
-            for linha in f_in:
-                if nome not in linha:
+            for i, linha in enumerate(f_in):
+                if i != int(nome)-1:  # Se não for o equipamento selecionado, mantém no arquivo
                     f_out.write(linha)
         
         os.replace(temp_path, arquivo_path)
@@ -648,6 +835,76 @@ def excluir_equipamento(nome):
         
     except Exception as e:
         print(f"Erro ao excluir equipamento: {e}")
+        return False
+
+def editar_equipamento(nome):
+    """Função para editar equipamento"""
+    arquivo_path = get_file_path('equipamentos.txt')
+    temp_path = get_file_path('temp.txt')
+    
+    try:
+        with open(arquivo_path, 'r', encoding='utf-8') as f_in, \
+             open(temp_path, 'w', encoding='utf-8') as f_out:
+            
+            encontrado = False
+            for i, linha in enumerate(f_in):
+                dados = linha.strip().split('|')
+                if i == int(nome)-1:  # Encontrou o equipamento para editar pelo índice
+                    encontrado = True
+                    # Mostra dados atuais
+                    print("\nDados atuais:")
+                    print(f"Nome: {dados[1]}")
+                    print(f"Série: {dados[0]}")
+                    print(f"Quantidade: {dados[2]}")
+                    print(f"Local: {dados[5]}")
+                    
+                    # Solicita novos dados (ou mantém os atuais)
+                    novo_nome = input("\nNovo nome (Enter para manter atual): ") or dados[1]
+                    nova_serie = input("Nova série (Enter para manter atual): ") or dados[0]
+                    while True:
+                        try:
+                            nova_qtd = input("Nova quantidade (Enter para manter atual): ")
+                            if nova_qtd == "":
+                                nova_qtd = dados[2]
+                                break
+                            nova_qtd = int(nova_qtd)
+                            break
+                        except ValueError:
+                            print("Por favor, digite um número válido para quantidade.")
+                    nova_descricao = input("Nova descrição (Enter para manter atual): ") or dados[3]
+                    nova_foto = input("Nova foto (Enter para manter atual): ") or dados[4]
+                    novo_local = input("Novo local (Enter para manter atual): ") or dados[5]
+                    
+                    # Confirma alterações
+                    print("\nConfirma as alterações?")
+                    print(f"Nome: {novo_nome}")
+                    print(f"Série: {nova_serie}")
+                    print(f"Quantidade: {nova_qtd}")
+                    print(f"Local: {novo_local}")
+                    
+                    confirmacao = input("\nConfirmar alterações? (S/N): ").upper()
+                    if confirmacao == 'S':
+                        # Escreve a linha atualizada
+                        f_out.write(f"{nova_serie}|{novo_nome}|{nova_qtd}|{nova_descricao}|{nova_foto}|{novo_local}\n")
+                        print("Alterações salvas com sucesso!")
+                    else:
+                        # Mantém os dados originais
+                        f_out.write(linha)
+                        print("Operação cancelada.")
+                else:
+                    # Mantém as outras linhas inalteradas
+                    f_out.write(linha)
+            
+            if not encontrado:
+                print("Equipamento não encontrado!")
+                return False
+        
+        # Substitui o arquivo original pelo temporário
+        os.replace(temp_path, arquivo_path)
+        return True
+        
+    except Exception as e:
+        print(f"Erro ao editar equipamento: {e}")
         return False
 
 def ver_todos_chamados():
@@ -682,8 +939,13 @@ def atualizar_status_chamado(id_chamado):
                 if dados[0] == id_chamado:
                     chamado_encontrado = True
                     print(f"\nChamado encontrado:")
-                    print(f"Descrição: {dados[0]}")
-                    print(f"Status atual: {dados[1]}")
+                    print(f"ID: {dados[0]}")
+                    print(f"Descrição: {dados[1]}")
+                    print(f"Prioridade: {dados[2]}")
+                    print(f"Data: {dados[3]}")
+                    print(f"Equipamento: {dados[4]}")
+                    print(f"Responsável: {dados[5]}")
+                    print(f"Status atual: {dados[2]}")
                     break
         
         if not chamado_encontrado:
@@ -692,24 +954,35 @@ def atualizar_status_chamado(id_chamado):
         
         # Solicita o novo status
         while True:
-            novo_status = input("Novo status (aberto/em_andamento/fechado): ").lower()
+            novo_status = input("\nNovo status (aberto/em_andamento/fechado): ").lower()
             if novo_status in ['aberto', 'em_andamento', 'fechado']:
                 break
             print("Status inválido!")
         
-        # Atualiza o arquivo
+        # Confirma a alteração
+        print("\nConfirma a alteração do status?")
+        confirmacao = input("(S/N): ").upper()
+        if confirmacao != 'S':
+            print("Operação cancelada.")
+            return False
+        
+        # Atualiza o arquivo com nova data e hora
+        nova_data = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        
         with open(arquivo_path, 'r', encoding='utf-8') as f_in, \
              open(temp_path, 'w', encoding='utf-8') as f_out:
-            for linha in f:
+            for linha in f_in:
                 dados = linha.strip().split('|')
                 if dados[0] == id_chamado:
-                    dados[1] = novo_status
+                    dados[2] = novo_status  # Atualiza o status
+                    dados[3] = nova_data    # Atualiza a data
                     f_out.write('|'.join(dados) + '\n')
                 else:
                     f_out.write(linha)
         
         os.replace(temp_path, arquivo_path)
         print("Status do chamado atualizado com sucesso!")
+        print(f"Nova data/hora: {nova_data}")
         return True
         
     except Exception as e:
@@ -728,10 +1001,19 @@ def excluir_chamado(id_chamado):
         with open(arquivo_path, 'r', encoding='utf-8') as f:
             for linha in f:
                 dados = linha.strip().split('|')
-                if dados[0] == id_chamado:
+                if dados[0] == id_chamado:  # Compara o ID
                     chamado_encontrado = True
-                    if dados[1] == 'em_andamento':
-                        print("Não é possível excluir um chamado em andamento!")
+                    print(f"\nChamado encontrado:")
+                    print(f"ID: {dados[0]}")
+                    print(f"Descrição: {dados[1]}")
+                    print(f"Prioridade: {dados[2]}")
+                    print(f"Data: {dados[3]}")
+                    print(f"Equipamento: {dados[4]}")
+                    print(f"Responsável: {dados[5]}")
+                    
+                    confirmacao = input("\nConfirmar exclusão? (S/N): ").upper()
+                    if confirmacao != 'S':
+                        print("Operação cancelada.")
                         return False
                     break
         
@@ -742,9 +1024,9 @@ def excluir_chamado(id_chamado):
         # Exclui o chamado
         with open(arquivo_path, 'r', encoding='utf-8') as f_in, \
              open(temp_path, 'w', encoding='utf-8') as f_out:
-            for linha in f:
+            for linha in f_in:
                 dados = linha.strip().split('|')
-                if dados[0] != id_chamado:
+                if dados[0] != id_chamado:  # Mantém todos exceto o ID selecionado
                     f_out.write(linha)
         
         os.replace(temp_path, arquivo_path)
@@ -754,6 +1036,16 @@ def excluir_chamado(id_chamado):
     except Exception as e:
         print(f"Erro ao excluir chamado: {e}")
         return False
+
+def listar_nomes_usuarios():
+    """Lista apenas os nomes dos usuários cadastrados"""
+    arquivo_path = get_file_path('usuarios.txt')
+    if os.path.exists(arquivo_path):
+        print("\nUsuários disponíveis:")
+        with open(arquivo_path, 'r', encoding='utf-8') as f:
+            for linha in f:
+                dados = linha.strip().split('|')
+                print(f"- {dados[0]}")
 
 if __name__ == "__main__":
     main_loop()

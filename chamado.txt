@@ -1,1 +1,6 @@
-pc|baixa|22/12/2024 23:22:29|pc|fabio
+pc|aberto|22/12/2024 23:22:29|pc|fabio
+dsa|baixa|23/12/2024 22:28:30|pc|fabio
+1|pc|aberto|23/12/2024 23:19:23|da|Kleb
+dasda|baixa|23/12/2024 22:34:37|dsa|Kleb
+sdasda|baixa|23/12/2024 23:11:33|pc|Kleb
+6|dasda|media|25/12/2024 22:46:06|pc|Kleb
