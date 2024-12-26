@@ -10,6 +10,14 @@ Pontos de melhora: quando for um usuario de admin
     - em editar e excluir usuarios deve poder fazer a pesquisa por nome ou por email, alem disso,
     em excluir deve ter uma mensagem de confirmação antes de excluir o usuario
 """
+open('cadastro_equipamentos.txt', "a").close()
+open('usuarios.txt', "a").close()
+open('chamado.txt', "a").close()
+open('instalacao.txt', "a").close()
+open('equipamentos.txt', "a").close()
+open('acao.txt', "a").close()
+open('gestao_equipamento.txt', "a").close()
+open('temp.txt', "a").close()
 
 def get_file_path(arquivo):
     """Retorna o caminho completo do arquivo na pasta fallen"""
